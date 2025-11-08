@@ -19,6 +19,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       return "Equipment Details";
     }
     if (path.startsWith("/library")) return "Library";
+    if (path.startsWith("/studio")) return "Studio";
     if (path.startsWith("/settings")) return "Settings";
 
     return "";

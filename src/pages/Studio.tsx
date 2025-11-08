@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { Play, Download, Trash2, Search, Filter, MoreVertical } from "lucide-react";
+import { Play, Download, Trash2, Search, Filter, MoreVertical, Film } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Card,
-  CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -39,52 +38,53 @@ import { useToast } from "@/hooks/use-toast";
 interface Video {
   id: string;
   title: string;
+  model: string;
+  taskType: string;
   status: "completed" | "processing" | "failed";
 }
 
-export default function Library() {
+export default function Studio() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterModel, setFilterModel] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const { toast } = useToast();
 
-  // Mock data
+  // Mock data - Advanced 4D videos
   const videos: Video[] = [
     {
       id: "1",
-      title: "Door Replacement - SCC 101",
+      title: "Advanced Door Replacement - 4D Interactive",
+      model: "Rational SCC 101",
+      taskType: "Door Replacement",
       status: "completed",
     },
     {
       id: "2",
-      title: "Heating Element Cleaning - SCC 101",
-      status: "completed",
-    },
-    {
-      id: "3",
-      title: "Control Panel Display Replacement",
-      status: "completed",
+      title: "Immersive Maintenance Tutorial - 360°",
+      model: "Rational SCC 102",
+      taskType: "Maintenance",
+      status: "processing",
     },
   ];
 
-  const handleDelete = (videoId: string) => {
+  const handleDelete = () => {
     toast({
       title: "Video Deleted",
-      description: "The video has been removed from your library.",
+      description: "The advanced video has been removed from your studio.",
     });
   };
 
-  const handleDownload = (videoId: string, title: string) => {
+  const handleDownload = (title: string) => {
     toast({
       title: "Download Started",
       description: `Downloading: ${title}`,
     });
   };
 
-  const handlePlay = (videoId: string) => {
+  const handlePlay = () => {
     toast({
       title: "Opening Video",
-      description: "Video player will be implemented soon.",
+      description: "Advanced 4D video player will be implemented soon.",
     });
   };
 
@@ -100,6 +100,7 @@ export default function Library() {
 
   return (
     <div className="space-y-6">
+
       {/* Filters */}
       <div className="flex gap-4">
         <div className="flex-1 relative">
@@ -140,11 +141,20 @@ export default function Library() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {videos.map((video) => (
           <Card key={video.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-            {/* Thumbnail */}
-            <div className="relative aspect-video bg-muted cursor-pointer" onClick={() => handlePlay(video.id)}>
+            {/* Thumbnail with 4D Badge */}
+            <div className="relative aspect-video bg-muted cursor-pointer" onClick={handlePlay}>
               <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition-colors">
                 <Play className="h-12 w-12 text-white" />
               </div>
+              <Badge className="absolute top-2 left-2 bg-primary">
+                <Film className="h-3 w-3 mr-1" />
+                4D
+              </Badge>
+              {getStatusBadge(video.status) && (
+                <div className="absolute top-2 right-2">
+                  {getStatusBadge(video.status)}
+                </div>
+              )}
             </div>
 
             <CardHeader>
@@ -161,7 +171,7 @@ export default function Library() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleDownload(video.id, video.title)}>
+                    <DropdownMenuItem onClick={() => handleDownload(video.title)}>
                       <Download className="h-4 w-4 mr-2" />
                       Download
                     </DropdownMenuItem>
@@ -185,7 +195,7 @@ export default function Library() {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(video.id)}>
+                          <AlertDialogAction onClick={handleDelete}>
                             Delete
                           </AlertDialogAction>
                         </AlertDialogFooter>
@@ -202,12 +212,12 @@ export default function Library() {
       {/* Empty State */}
       {videos.length === 0 && (
         <div className="text-center py-12">
-          <Play className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No videos yet</h3>
+          <Film className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No 4D videos yet</h3>
           <p className="text-muted-foreground mb-4">
-            Create your first training video to see it here
+            Create your first advanced 4D training video
           </p>
-          <Button>Create Video</Button>
+          <Button>Create 4D Video</Button>
         </div>
       )}
     </div>

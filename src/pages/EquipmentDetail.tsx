@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { Upload, Box, Trash2 } from "lucide-react";
+import { Upload, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -101,9 +101,6 @@ export default function EquipmentDetail() {
       {/* Equipment Info */}
       <div>
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Box className="h-6 w-6 text-primary" />
-          </div>
           <div>
             <h1 className="text-3xl font-bold">{equipment.name}</h1>
             <p className="text-muted-foreground">

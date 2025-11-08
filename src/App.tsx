@@ -10,13 +10,13 @@ import Knowledge from "./pages/Knowledge";
 import EquipmentDetail from "./pages/EquipmentDetail";
 import Prompt from "./pages/Prompt";
 import Library from "./pages/Library";
+import Studio from "./pages/Studio";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import { AppLayout } from "./components/AppLayout";
 import { AuthProvider } from "./contexts/AuthContext";
-import { PassportProvider } from "./contexts/PassportContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -28,7 +28,6 @@ const App = () => (
       <ConfirmDialogProvider>
         <BrowserRouter>
           <AuthProvider>
-            <PassportProvider>
               <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
@@ -76,6 +75,16 @@ const App = () => (
                 }
               />
               <Route
+                path="/studio"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Studio />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/settings"
                 element={
                   <ProtectedRoute>
@@ -88,7 +97,6 @@ const App = () => (
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </PassportProvider>
           </AuthProvider>
         </BrowserRouter>
       </ConfirmDialogProvider>

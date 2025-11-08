@@ -11,7 +11,7 @@ import {
   useSidebar,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { BookOpen, Home, Video, LogOut, CreditCard, Settings } from "lucide-react";
+import { BookOpen, Home, Video, Film, LogOut, CreditCard, Settings } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +27,7 @@ const items = [
   { title: "Home", url: "/", icon: Home },
   { title: "Equipment", url: "/knowledge", icon: BookOpen },
   { title: "Library", url: "/library", icon: Video },
+  { title: "Studio", url: "/studio", icon: Film },
 ];
 
 export function AppSidebar() {

@@ -131,9 +131,6 @@ export default function Knowledge() {
           >
             <CardHeader>
               <div className="flex items-start gap-3">
-                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Package className="h-6 w-6 text-primary" />
-                </div>
                 <div className="flex-1 min-w-0">
                   <CardTitle className="text-lg truncate">{item.name}</CardTitle>
                   <CardDescription className="truncate">
