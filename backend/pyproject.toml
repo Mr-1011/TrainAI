@@ -1,0 +1,16 @@
+[project]
+name = "trainai-backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "black>=25.9.0",
+    "fastapi[standard]>=0.120.4",
+    "google-genai>=1.47.0",
+    "isort>=7.0.0",
+    "pydantic>=2.12.3",
+    "pydantic-settings>=2.11.0",
+    "python-multipart>=0.0.9",
+    "supabase>=2.4.0",
+]

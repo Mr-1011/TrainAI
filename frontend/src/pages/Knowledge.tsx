@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Plus, Package } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,87 +21,78 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-
-interface Equipment {
-  id: string;
-  name: string;
-  manufacturer: string;
-  category: string;
-  description?: string;
-  itemCount: number;
-  createdAt: string;
-}
+import { createEquipment, getEquipments } from "@/services/equipment.service";
+import type { Equipment } from "@/types/equipment";
 
 export default function Knowledge() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newEquipmentName, setNewEquipmentName] = useState("");
-  const [newEquipmentManufacturer, setNewEquipmentManufacturer] = useState("");
-  const [newEquipmentCategory, setNewEquipmentCategory] = useState("");
   const { toast } = useToast();
 
-  // Mock data for demonstration
-  const equipment: Equipment[] = [
-    {
-      id: "1",
-      name: "SelfCookingCenter 101",
-      manufacturer: "Rational",
-      category: "Oven",
-      description: "Commercial cooking oven with multiple functions",
-      itemCount: 5,
-      createdAt: "2024-01-15",
-    },
-    {
-      id: "2",
-      name: "SelfCookingCenter 102",
-      manufacturer: "Rational",
-      category: "Oven",
-      description: "Advanced commercial cooking oven",
-      itemCount: 3,
-      createdAt: "2024-01-20",
-    },
-    {
-      id: "3",
-      name: "VarioCookingCenter 101",
-      manufacturer: "Rational",
-      category: "Multi-Cooker",
-      description: "Versatile cooking equipment",
-      itemCount: 2,
-      createdAt: "2024-01-22",
-    },
-  ];
+  const {
+    data: equipment = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery<Equipment[]>({
+    queryKey: ["equipments"],
+    queryFn: getEquipments,
+  });
 
-  const handleCreateEquipment = () => {
-    if (!newEquipmentName.trim() || !newEquipmentManufacturer.trim()) {
+  const createEquipmentMutation = useMutation({
+    mutationFn: (name: string) =>
+      createEquipment({
+        name,
+      }),
+    onSuccess: () => {
+      toast({
+        title: "Equipment created",
+        description: `${newEquipmentName} is ready to use.`,
+      });
+      setIsCreateDialogOpen(false);
+      setNewEquipmentName("");
+      queryClient.invalidateQueries({ queryKey: ["equipments"] });
+    },
+    onError: (mutationError) => {
+      const message =
+        mutationError instanceof Error
+          ? mutationError.message
+          : "Unable to create equipment. Please try again.";
       toast({
         title: "Error",
-        description: "Please fill in all required fields",
+        description: message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateEquipment = () => {
+    if (!newEquipmentName.trim()) {
+      toast({
+        title: "Error",
+        description: "Equipment name is required",
         variant: "destructive",
       });
       return;
     }
 
-    toast({
-      title: "Equipment Created",
-      description: `${newEquipmentName} has been added to your equipment list.`,
-    });
-
-    setIsCreateDialogOpen(false);
-    setNewEquipmentName("");
-    setNewEquipmentManufacturer("");
-    setNewEquipmentCategory("");
+    createEquipmentMutation.mutate(newEquipmentName.trim());
   };
 
   const handleEquipmentClick = (equipmentId: string) => {
     navigate(`/knowledge/${equipmentId}`);
   };
 
-  const filteredEquipment = equipment.filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.manufacturer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredEquipment = useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    if (!query) return equipment;
+    return equipment.filter((item) =>
+      item.name.toLowerCase().includes(query)
+    );
+  }, [equipment, searchQuery]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -121,45 +113,51 @@ export default function Knowledge() {
         </Button>
       </div>
 
+      {isError && (
+        <div className="p-4 rounded-lg border border-destructive/40 bg-destructive/5 text-sm text-destructive">
+          {error instanceof Error
+            ? error.message
+            : "Unable to load equipment right now."}
+        </div>
+      )}
+
       {/* Equipment Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredEquipment.map((item) => (
-          <Card
-            key={item.id}
-            className="cursor-pointer transition-shadow hover:shadow-lg"
-            onClick={() => handleEquipmentClick(item.id)}
-          >
-            <CardHeader>
-              <div className="flex items-start gap-3">
-                <div className="flex-1 min-w-0">
-                  <CardTitle className="text-lg truncate">{item.name}</CardTitle>
-                  <CardDescription className="truncate">
-                    {item.manufacturer} • {item.category}
-                  </CardDescription>
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((item) => (
+            <Card key={item} className="h-32 animate-pulse" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredEquipment.map((item) => (
+            <Card
+              key={item.id}
+              className="cursor-pointer transition-shadow hover:shadow-lg"
+              onClick={() => handleEquipmentClick(item.id)}
+            >
+              <CardHeader>
+                <div className="flex items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-lg truncate">
+                      {item.name}
+                    </CardTitle>
+                    <CardDescription className="truncate">
+                      {item.manuals.length}{" "}
+                      {item.manuals.length === 1 ? "manual" : "manuals"} •{" "}
+                      {item.images.length}{" "}
+                      {item.images.length === 1 ? "image" : "images"}
+                    </CardDescription>
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {item.description && (
-                <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                  {item.description}
-                </p>
-              )}
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">
-                  {item.itemCount} {item.itemCount === 1 ? 'item' : 'items'}
-                </span>
-                <span className="text-muted-foreground">
-                  Added {item.createdAt}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Empty State */}
-      {filteredEquipment.length === 0 && (
+      {!isLoading && filteredEquipment.length === 0 && (
         <div className="text-center py-12">
           <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold mb-2">No equipment found</h3>
@@ -183,7 +181,8 @@ export default function Knowledge() {
           <DialogHeader>
             <DialogTitle>Add New Equipment</DialogTitle>
             <DialogDescription>
-              Create a new equipment entry to organize your documentation
+              Give your equipment a clear name so you can attach manuals and
+              reference images.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -194,24 +193,7 @@ export default function Knowledge() {
                 placeholder="e.g., SelfCookingCenter 201"
                 value={newEquipmentName}
                 onChange={(e) => setNewEquipmentName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="manufacturer">Manufacturer *</Label>
-              <Input
-                id="manufacturer"
-                placeholder="e.g., Rational"
-                value={newEquipmentManufacturer}
-                onChange={(e) => setNewEquipmentManufacturer(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Input
-                id="category"
-                placeholder="e.g., Oven, Multi-Cooker"
-                value={newEquipmentCategory}
-                onChange={(e) => setNewEquipmentCategory(e.target.value)}
+                disabled={createEquipmentMutation.isPending}
               />
             </div>
           </div>
@@ -222,8 +204,13 @@ export default function Knowledge() {
             >
               Cancel
             </Button>
-            <Button onClick={handleCreateEquipment}>
-              Create Equipment
+            <Button
+              onClick={handleCreateEquipment}
+              disabled={createEquipmentMutation.isPending}
+            >
+              {createEquipmentMutation.isPending
+                ? "Creating..."
+                : "Create Equipment"}
             </Button>
           </DialogFooter>
         </DialogContent>
