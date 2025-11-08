@@ -94,10 +94,8 @@ export function AIInput() {
   });
 
   const equipmentModels = [
-    { id: "scc101", name: "Rational SelfCookingCenter 101" },
-    { id: "scc102", name: "Rational SelfCookingCenter 102" },
-    { id: "scc201", name: "Rational SelfCookingCenter 201" },
-    { id: "vcc101", name: "Rational VarioCookingCenter 101" },
+    { id: "scc101", name: "Rational Komidämpfer iCombi Pro" },
+    { id: "scc102", name: "Kombidämpfer - Touch - 10x GN" },
   ];
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -140,7 +138,7 @@ export function AIInput() {
       // Navigate to scene editor after a short delay
       setTimeout(() => {
         navigate("/scene-editor");
-      }, 1500);
+      }, 3000);
     } catch (error) {
       console.error("Failed to create video:", error);
       toast({
@@ -174,7 +172,7 @@ export function AIInput() {
 
   return (
     <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-4 space-y-8">
-      <h1 className="text-4xl font-bold text-foreground">
+      <h1 className="text-4xl font-bold text-foreground text-center mt-14">
         What training video can I help you create?
       </h1>
 
@@ -300,7 +298,7 @@ export function AIInput() {
           <ActionButton
             icon={<Wrench className="w-4 h-4" />}
             label="Door Replacement"
-            onClick={() => handleQuickPrompt("Replace the broken door on the oven")}
+            onClick={() => handleQuickPrompt("How to replace the broken door on the oven")}
           />
           <ActionButton
             icon={<Settings className="w-4 h-4" />}

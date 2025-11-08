@@ -210,9 +210,8 @@ export default function Library() {
             <Card key={video.id} className="overflow-hidden hover:shadow-lg transition-shadow">
               {/* Thumbnail */}
               <div
-                className={`relative aspect-video bg-muted ${
-                  video.resultUrl ? "cursor-pointer" : "cursor-not-allowed opacity-60"
-                }`}
+                className={`relative aspect-video bg-muted ${video.resultUrl ? "cursor-pointer" : "cursor-not-allowed opacity-60"
+                  }`}
                 onClick={() => video.resultUrl && handlePlay(video)}
               >
                 <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition-colors">
@@ -226,17 +225,8 @@ export default function Library() {
                     <CardTitle className="text-base line-clamp-2">
                       {video.prompt}
                     </CardTitle>
-                    <p className="text-xs text-muted-foreground">
-                      {formatDateLabel(video.createdAt)}
-                    </p>
-                    {video.equipmentId && (
-                      <p className="text-xs text-muted-foreground">
-                        Equipment ID: {video.equipmentId}
-                      </p>
-                    )}
                   </div>
                   <div className="flex items-start gap-2">
-                    {getStatusBadge(video.status)}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -283,28 +273,6 @@ export default function Library() {
                   </div>
                 </div>
               </CardHeader>
-
-              <CardContent>
-                <div className="text-sm text-muted-foreground space-y-1">
-                  <p>Status: {statusMeta[video.status].label}</p>
-                  <p>
-                    Result:{" "}
-                    {video.resultUrl ? (
-                      <a
-                        href={video.resultUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary underline"
-                      >
-                        Open video
-                      </a>
-                    ) : (
-                      "Processing..."
-                    )}
-                  </p>
-                  {video.taskId && <p>Task ID: {video.taskId}</p>}
-                </div>
-              </CardContent>
             </Card>
           ))}
         </div>

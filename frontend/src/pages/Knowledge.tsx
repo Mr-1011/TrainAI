@@ -133,9 +133,23 @@ export default function Knowledge() {
           {filteredEquipment.map((item) => (
             <Card
               key={item.id}
-              className="cursor-pointer transition-shadow hover:shadow-lg"
+              className="cursor-pointer transition-shadow hover:shadow-lg overflow-hidden"
               onClick={() => handleEquipmentClick(item.id)}
             >
+              {/* Equipment Image Thumbnail */}
+              <div className="relative aspect-video bg-muted">
+                {item.images.length > 0 ? (
+                  <img
+                    src={item.images[0]}
+                    alt={item.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Package className="h-12 w-12 text-muted-foreground" />
+                  </div>
+                )}
+              </div>
               <CardHeader>
                 <div className="flex items-start gap-3">
                   <div className="flex-1 min-w-0">
