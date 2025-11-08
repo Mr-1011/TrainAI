@@ -131,15 +131,15 @@ export function AIInput() {
     try {
       setIsCreating(true);
 
-      // Simulate video generation - show success and navigate to library
+      // Simulate video generation - show success and navigate to scene editor
       toast({
         title: "Video Generation Started",
         description: `Creating training video for ${savedModel.name}. This will take 3-5 minutes.`,
       });
 
-      // Navigate to library after a short delay
+      // Navigate to scene editor after a short delay
       setTimeout(() => {
-        navigate("/library");
+        navigate("/scene-editor");
       }, 1500);
     } catch (error) {
       console.error("Failed to create video:", error);

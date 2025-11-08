@@ -103,7 +103,7 @@ export default function Knowledge() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
       {/* Search and Add Button */}
       <div className="flex gap-4 items-center justify-between">
         <div className="relative w-80">

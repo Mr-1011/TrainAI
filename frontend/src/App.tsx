@@ -9,6 +9,7 @@ import VerifyEmail from "./pages/VerifyEmail";
 import Knowledge from "./pages/Knowledge";
 import EquipmentDetail from "./pages/EquipmentDetail";
 import Prompt from "./pages/Prompt";
+import SceneEditor from "./pages/SceneEditor";
 import Library from "./pages/Library";
 import Studio from "./pages/Studio";
 import Profile from "./pages/Profile";
@@ -60,6 +61,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <EquipmentDetail />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/scene-editor"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <SceneEditor />
                     </AppLayout>
                   </ProtectedRoute>
                 }

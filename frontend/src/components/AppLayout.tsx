@@ -18,6 +18,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       // Equipment detail page - show equipment name in breadcrumb
       return "Equipment Details";
     }
+    if (path.startsWith("/scene-editor")) return "Scene Editor";
     if (path.startsWith("/library")) return "Library";
     if (path.startsWith("/studio")) return "Studio";
     if (path.startsWith("/settings")) return "Settings";
