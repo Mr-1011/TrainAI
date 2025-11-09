@@ -61,11 +61,6 @@ export const uploadEquipmentFile = async ({
   const { data } = await apiClient.post<EquipmentApiResponse>(
     endpoint,
     formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
   );
 
   return mapEquipment(data);
