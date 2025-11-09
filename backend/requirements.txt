@@ -5,4 +5,5 @@ isort>=7.0.0
 pydantic>=2.12.3
 pydantic-settings>=2.11.0
 python-multipart>=0.0.9
+runware>=0.3.0
 supabase>=2.4.0

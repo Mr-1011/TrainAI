@@ -8,7 +8,8 @@ class Settings(BaseSettings):
     supabase_equipment_table: str
     supabase_manuals_storage: str
     supabase_images_storage: str
-    supabase_videos_table: str
+    supabase_video_table: str
+    runware_api_key: str
 
     class Config:
         env_file = ".env"

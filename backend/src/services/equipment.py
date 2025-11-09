@@ -91,6 +91,12 @@ def list_equipments() -> list[Equipment]:
     return [map_equipment(record) for record in records]
 
 
+def get_equipment(equipment_id: str) -> Equipment:
+    """Get a single equipment by ID."""
+    equipment = fetch_equipment(equipment_id)
+    return map_equipment(equipment)
+
+
 def update_equipment(equipment_id: str, name: str) -> Equipment:
     # Check if equipment exists
     fetch_equipment(equipment_id)

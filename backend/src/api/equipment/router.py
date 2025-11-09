@@ -1,7 +1,9 @@
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
 
 from src.schemas.equipment import Equipment, EquipmentCreate, EquipmentUpdate
+from src.schemas.video import Video, VideoCreate
 from src.services import equipment as equipment_service
+from src.services import video as video_service
 
 router = APIRouter(prefix="/equipments")
 
@@ -51,3 +53,19 @@ def delete_manual(equipment_id: str, url: str) -> Equipment:
 @router.delete("/{equipment_id}/images", response_model=Equipment)
 def delete_image(equipment_id: str, url: str) -> Equipment:
     return equipment_service.remove_image(equipment_id, url)
+
+
+@router.post("/{equipment_id}/videos", response_model=Video)
+async def create_video(
+    equipment_id: str, payload: VideoCreate, background_tasks: BackgroundTasks
+) -> Video:
+    video = video_service.create_video_task(equipment_id, payload.prompt)
+    background_tasks.add_task(
+        video_service.process_video_generation, video.id, equipment_id, payload.prompt
+    )
+    return video
+
+
+@router.get("/{equipment_id}/videos", response_model=list[Video])
+def list_videos(equipment_id: str) -> list[Video]:
+    return video_service.list_videos(equipment_id)
