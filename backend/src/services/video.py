@@ -60,3 +60,24 @@ def list_videos() -> list[Video]:
     )
     records = data.data or []
     return [map_video(record) for record in records]
+
+
+def delete_video(video_id: str) -> None:
+    """Delete a video by ID."""
+    from fastapi import HTTPException
+    
+    # Check if video exists
+    result = (
+        supabase_client.table(settings.supabase_videos_table)
+        .select("*")
+        .eq("id", video_id)
+        .execute()
+    )
+    
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Video not found")
+    
+    # Delete the video
+    supabase_client.table(settings.supabase_videos_table).delete().eq(
+        "id", video_id
+    ).execute()

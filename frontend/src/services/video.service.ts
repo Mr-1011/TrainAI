@@ -41,3 +41,7 @@ export const getVideos = async (): Promise<Video[]> => {
   const { data } = await apiClient.get<VideoApiResponse[]>("/videos");
   return data.map(mapVideo);
 };
+
+export const deleteVideo = async (videoId: string): Promise<void> => {
+  await apiClient.delete(`/videos/${videoId}`);
+};

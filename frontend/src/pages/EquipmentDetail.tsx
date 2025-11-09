@@ -1,9 +1,10 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Upload, Loader2, BadgeCheck } from "lucide-react";
+import { Upload, Loader2, BadgeCheck, Pencil, Check, X, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
@@ -11,8 +12,25 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { getEquipments, uploadEquipmentFile } from "@/services/equipment.service";
+import { getEquipments, uploadEquipmentFile, updateEquipment, deleteEquipmentFile } from "@/services/equipment.service";
 import type { Equipment, EquipmentFileType } from "@/types/equipment";
 import { API_BASE_URL } from "@/lib/api-client";
 
@@ -22,6 +40,9 @@ export default function EquipmentDetail() {
   const queryClient = useQueryClient();
   const manualInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState("");
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
   const {
     data: equipments = [],
@@ -97,6 +118,61 @@ export default function EquipmentDetail() {
     },
   });
 
+  const updateNameMutation = useMutation({
+    mutationFn: (name: string) => {
+      if (!equipmentId) {
+        return Promise.reject(new Error("Equipment not found"));
+      }
+      return updateEquipment(equipmentId, { name });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Name updated",
+        description: "Equipment name has been updated successfully.",
+      });
+      setIsEditingName(false);
+      queryClient.invalidateQueries({ queryKey: ["equipments"] });
+    },
+    onError: (updateError) => {
+      const message =
+        updateError instanceof Error
+          ? updateError.message
+          : "Unable to update name.";
+      toast({
+        title: "Update failed",
+        description: message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteFileMutation = useMutation({
+    mutationFn: ({ url, type }: { url: string; type: EquipmentFileType }) => {
+      if (!equipmentId) {
+        return Promise.reject(new Error("Equipment not found"));
+      }
+      return deleteEquipmentFile({ equipmentId, url, type });
+    },
+    onSuccess: (_data, variables) => {
+      toast({
+        title: `${variables.type === "manual" ? "Manual" : "Image"} deleted`,
+        description: "The file has been removed from your equipment.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["equipments"] });
+    },
+    onError: (deleteError) => {
+      const message =
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Unable to delete file.";
+      toast({
+        title: "Delete failed",
+        description: message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const buildAssetUrl = (path: string) => {
     if (path.startsWith("http")) return path;
     const trimmedBase = API_BASE_URL.replace(/\/$/, "");
@@ -139,6 +215,30 @@ export default function EquipmentDetail() {
     event.target.value = "";
   };
 
+  const startEditingName = () => {
+    if (equipment) {
+      setEditedName(equipment.name);
+      setIsEditingName(true);
+    }
+  };
+
+  const cancelEditingName = () => {
+    setIsEditingName(false);
+    setEditedName("");
+  };
+
+  const saveEditedName = () => {
+    if (!editedName.trim()) {
+      toast({
+        title: "Invalid name",
+        description: "Equipment name cannot be empty.",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateNameMutation.mutate(editedName.trim());
+  };
+
   if (!equipmentId) {
     return (
       <div className="max-w-2xl mx-auto">
@@ -175,10 +275,59 @@ export default function EquipmentDetail() {
         <>
           {/* Equipment Info */}
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div>
-                <h1 className="text-3xl font-bold">{equipment.name}</h1>
-                <p className="text-muted-foreground">
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <div className="flex-1">
+                {isEditingName ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={editedName}
+                      onChange={(e) => setEditedName(e.target.value)}
+                      className="text-3xl font-bold h-12"
+                      placeholder="Equipment name"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          saveEditedName();
+                        } else if (e.key === "Escape") {
+                          cancelEditingName();
+                        }
+                      }}
+                    />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={saveEditedName}
+                      disabled={updateNameMutation.isPending}
+                    >
+                      {updateNameMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Check className="h-4 w-4 text-green-600" />
+                      )}
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={cancelEditingName}
+                      disabled={updateNameMutation.isPending}
+                    >
+                      <X className="h-4 w-4 text-red-600" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-3xl font-bold">{equipment.name}</h1>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={startEditingName}
+                      className="h-8 w-8"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+                <p className="text-muted-foreground mt-1">
                   {equipment.manuals.length}{" "}
                   {equipment.manuals.length === 1 ? "manual" : "manuals"} •{" "}
                   {equipment.images.length}{" "}
@@ -252,6 +401,34 @@ export default function EquipmentDetail() {
                             Download
                           </a>
                         </div>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Manual</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "{getFileName(filePath)}"? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => deleteFileMutation.mutate({ url: filePath, type: "manual" })}
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     ))}
                   </div>
@@ -304,7 +481,8 @@ export default function EquipmentDetail() {
                     {equipment.images.map((filePath) => (
                       <Card
                         key={filePath}
-                        className="overflow-hidden hover:shadow-lg transition-shadow"
+                        className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                        onClick={() => setZoomedImage(filePath)}
                       >
                         <div className="aspect-video w-full overflow-hidden bg-muted">
                           <img
@@ -319,15 +497,36 @@ export default function EquipmentDetail() {
                               <p className="font-medium truncate text-sm">
                                 {getFileName(filePath)}
                               </p>
-                              <a
-                                href={buildAssetUrl(filePath)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs text-primary hover:underline"
-                              >
-                                Open image
-                              </a>
                             </div>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Image</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete "{getFileName(filePath)}"? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteFileMutation.mutate({ url: filePath, type: "image" })}
+                                    className="bg-destructive hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         </CardContent>
                       </Card>
@@ -377,6 +576,24 @@ export default function EquipmentDetail() {
           </div>
         </>
       )}
+
+      {/* Image Zoom Dialog */}
+      <Dialog open={!!zoomedImage} onOpenChange={(open) => !open && setZoomedImage(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>{zoomedImage && getFileName(zoomedImage)}</DialogTitle>
+          </DialogHeader>
+          {zoomedImage && (
+            <div className="w-full">
+              <img
+                src={buildAssetUrl(zoomedImage)}
+                alt={getFileName(zoomedImage)}
+                className="w-full h-auto rounded-lg"
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

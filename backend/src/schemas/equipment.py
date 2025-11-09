@@ -5,6 +5,10 @@ class EquipmentCreate(BaseModel):
     name: str
 
 
+class EquipmentUpdate(BaseModel):
+    name: str
+
+
 class Equipment(BaseModel):
     id: str
     name: str

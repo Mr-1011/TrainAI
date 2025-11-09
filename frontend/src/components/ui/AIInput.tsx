@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import {
@@ -9,6 +10,7 @@ import {
   ArrowUpIcon,
   X,
   Settings,
+  Loader2,
 } from "lucide-react";
 import {
   Dialog,
@@ -27,6 +29,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { getEquipments } from "@/services/equipment.service";
+import type { Equipment } from "@/types/equipment";
 
 interface UseAutoResizeTextareaProps {
   minHeight: number;
@@ -93,10 +97,18 @@ export function AIInput() {
     maxHeight: 200,
   });
 
-  const equipmentModels = [
-    { id: "scc101", name: "Rational Komidämpfer iCombi Pro" },
-    { id: "scc102", name: "Kombidämpfer - Touch - 10x GN" },
-  ];
+  const {
+    data: equipments = [],
+    isLoading: isLoadingEquipments,
+  } = useQuery<Equipment[]>({
+    queryKey: ["equipments"],
+    queryFn: getEquipments,
+  });
+
+  const equipmentModels = equipments.map((eq) => ({
+    id: eq.id,
+    name: eq.name,
+  }));
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -266,18 +278,34 @@ export function AIInput() {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="model">Equipment Model</Label>
-                <Select value={selectedModel} onValueChange={setSelectedModel}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a model..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {equipmentModels.map((model) => (
-                      <SelectItem key={model.id} value={model.id}>
-                        {model.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {isLoadingEquipments ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : equipmentModels.length === 0 ? (
+                  <div className="text-center py-8 border-2 border-dashed rounded-lg">
+                    <Package className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground mb-2">
+                      No equipment available
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Add equipment in the Knowledge section first
+                    </p>
+                  </div>
+                ) : (
+                  <Select value={selectedModel} onValueChange={setSelectedModel}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a model..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {equipmentModels.map((model) => (
+                        <SelectItem key={model.id} value={model.id}>
+                          {model.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </div>
             <div className="flex justify-end gap-2">
@@ -287,7 +315,10 @@ export function AIInput() {
               >
                 Cancel
               </Button>
-              <Button onClick={handleSaveModel} disabled={!selectedModel}>
+              <Button
+                onClick={handleSaveModel}
+                disabled={!selectedModel || isLoadingEquipments || equipmentModels.length === 0}
+              >
                 Select Model
               </Button>
             </div>

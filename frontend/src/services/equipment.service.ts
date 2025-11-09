@@ -28,6 +28,17 @@ export const createEquipment = async (
   return mapEquipment(data);
 };
 
+export const updateEquipment = async (
+  equipmentId: string,
+  payload: Pick<Equipment, "name">,
+): Promise<Equipment> => {
+  const { data } = await apiClient.patch<EquipmentApiResponse>(
+    `/equipments/${equipmentId}`,
+    payload,
+  );
+  return mapEquipment(data);
+};
+
 interface UploadEquipmentFilePayload {
   equipmentId: string;
   file: File;
@@ -50,7 +61,35 @@ export const uploadEquipmentFile = async ({
   const { data } = await apiClient.post<EquipmentApiResponse>(
     endpoint,
     formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
   );
+
+  return mapEquipment(data);
+};
+
+interface DeleteEquipmentFilePayload {
+  equipmentId: string;
+  url: string;
+  type: EquipmentFileType;
+}
+
+export const deleteEquipmentFile = async ({
+  equipmentId,
+  url,
+  type,
+}: DeleteEquipmentFilePayload): Promise<Equipment> => {
+  const endpoint =
+    type === "manual"
+      ? `/equipments/${equipmentId}/manuals`
+      : `/equipments/${equipmentId}/images`;
+
+  const { data } = await apiClient.delete<EquipmentApiResponse>(endpoint, {
+    params: { url },
+  });
 
   return mapEquipment(data);
 };

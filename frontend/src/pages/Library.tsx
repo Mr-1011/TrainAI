@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Play, Download, Trash2, Search, Filter, MoreVertical } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Play, Download, Trash2, Search, Filter, MoreVertical, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -42,8 +42,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { getVideos } from "@/services/video.service";
+import { getVideos, deleteVideo } from "@/services/video.service";
+import { getEquipments } from "@/services/equipment.service";
 import type { Video, VideoStatus } from "@/types/video";
+import type { Equipment } from "@/types/equipment";
 
 type StatusFilter = "all" | VideoStatus;
 
@@ -78,6 +80,7 @@ export default function Library() {
   const [filterStatus, setFilterStatus] = useState<StatusFilter>("all");
   const [activeVideo, setActiveVideo] = useState<Video | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const {
     data: videos = [],
@@ -88,6 +91,43 @@ export default function Library() {
     queryKey: ["videos"],
     queryFn: getVideos,
   });
+
+  const {
+    data: equipments = [],
+  } = useQuery<Equipment[]>({
+    queryKey: ["equipments"],
+    queryFn: getEquipments,
+  });
+
+  const deleteVideoMutation = useMutation({
+    mutationFn: (videoId: string) => deleteVideo(videoId),
+    onSuccess: () => {
+      toast({
+        title: "Video deleted",
+        description: "The video has been removed from your library.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["videos"] });
+    },
+    onError: (deleteError) => {
+      const message =
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Unable to delete video.";
+      toast({
+        title: "Delete failed",
+        description: message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const equipmentMap = useMemo(() => {
+    const map = new Map<string, string>();
+    equipments.forEach((eq) => {
+      map.set(eq.id, eq.name);
+    });
+    return map;
+  }, [equipments]);
 
   const equipmentOptions = useMemo(() => {
     const ids = new Set<string>();
@@ -110,10 +150,7 @@ export default function Library() {
   }, [videos, searchQuery, filterModel, filterStatus]);
 
   const handleDelete = (video: Video) => {
-    toast({
-      title: "Delete requested",
-      description: `"${video.prompt}" would be deleted once this endpoint is implemented.`,
-    });
+    deleteVideoMutation.mutate(video.id);
   };
 
   const handleDownload = (video: Video) => {
@@ -146,9 +183,9 @@ export default function Library() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      {/* Filters */}
-      <div className="flex flex-col gap-4 md:flex-row">
-        <div className="flex-1 relative">
+      {/* Search and Filters */}
+      <div className="flex gap-4 items-center justify-between">
+        <div className="relative w-80">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search videos..."
@@ -157,36 +194,38 @@ export default function Library() {
             className="pl-10"
           />
         </div>
-        <Select value={filterModel} onValueChange={setFilterModel}>
-          <SelectTrigger className="w-full md:w-[200px]">
-            <Filter className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Equipment" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Equipment</SelectItem>
-            {equipmentOptions.map((id) => (
-              <SelectItem key={id} value={id}>
-                {id}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={filterStatus}
-          onValueChange={(value) => setFilterStatus(value as StatusFilter)}
-        >
-          <SelectTrigger className="w-full md:w-[200px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            {statusOptions.map((status) => (
-              <SelectItem key={status.value} value={status.value}>
-                {status.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2">
+          <Select value={filterModel} onValueChange={setFilterModel}>
+            <SelectTrigger className="w-[200px]">
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Equipment" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Equipment</SelectItem>
+              {equipmentOptions.map((id) => (
+                <SelectItem key={id} value={id}>
+                  {equipmentMap.get(id) || id}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={filterStatus}
+            onValueChange={(value) => setFilterStatus(value as StatusFilter)}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              {statusOptions.map((status) => (
+                <SelectItem key={status.value} value={status.value}>
+                  {status.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {isError && (
@@ -214,8 +253,22 @@ export default function Library() {
                   }`}
                 onClick={() => video.resultUrl && handlePlay(video)}
               >
+                {video.resultUrl ? (
+                  <video
+                    src={video.resultUrl}
+                    preload="metadata"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-muted flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2" />
+                      <p className="text-xs text-muted-foreground">Processing...</p>
+                    </div>
+                  </div>
+                )}
                 <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition-colors">
-                  <Play className="h-12 w-12 text-white" />
+                  <Play className="h-12 w-12 text-white drop-shadow-lg" />
                 </div>
               </div>
 
@@ -262,8 +315,18 @@ export default function Library() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(video)}>
-                                Delete
+                              <AlertDialogAction
+                                onClick={() => handleDelete(video)}
+                                disabled={deleteVideoMutation.isPending}
+                              >
+                                {deleteVideoMutation.isPending ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Deleting...
+                                  </>
+                                ) : (
+                                  "Delete"
+                                )}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
